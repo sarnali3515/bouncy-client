@@ -1,28 +1,57 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
+
+import { Link, useNavigate } from 'react-router-dom';
 import logo from '../../assets/icon/bouncy-logo.png';
+import toast from "react-hot-toast";
+import { useState } from 'react';
+import axios from 'axios';
+
 
 const Registration = () => {
-    const [name, setName] = useState('');
-    const [pin, setPin] = useState('');
-    const [mobileNumber, setMobileNumber] = useState('');
-    const [email, setEmail] = useState('');
-    const [message, setMessage] = useState('');
+    const [pinError, setPinError] = useState("");
+    const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
+        const form = e.target;
+        const name = form.name.value;
+        const email = form.email.value;
+        const number = form.number.value;
+        const pin = form.pin.value;
+        console.log(name, email, number, pin)
+
+        setPinError("");
+
+        if (pin.length < 5) {
+            setPinError("Pin must be exactly 5 characters long.");
+            return;
+        }
+        if (pin.length > 5) {
+            setPinError("Pin must be 5 characters.");
+            return;
+        }
 
         try {
-            const response = await axios.post('/register', {
+            const userInfo = {
                 name,
-                pin,
-                mobileNumber,
                 email,
-            });
-            setMessage(response.data.message);
+                phoneNumber: number,
+                pin,
+            };
+
+            const response = await axios.post('http://localhost:5000/register', userInfo);
+
+            if (response.status === 201) {
+                console.log(response.data);
+                localStorage.setItem('token', response.data.token);
+                toast.success("Registration Successful");
+                navigate('/');
+
+            } else {
+                console.error(response.error);
+                toast.error("Registration Failed");
+            }
         } catch (error) {
-            setMessage(error.response?.data?.message || 'Server error');
+            toast.error("Registration Failed: " + error.message);
         }
     };
 
@@ -38,39 +67,26 @@ const Registration = () => {
 
                     <p className="mt-1 text-center text-white dark:text-gray-400">Login or create account</p>
 
-                    {message && <p className="mt-2 text-center text-white dark:text-gray-400">{message}</p>}
 
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleRegister}>
                         <div className="w-full mt-4">
                             <input
                                 className="block w-full px-4 py-2 mt-2 text-gray-700 placeholder-gray-500 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 focus:border-teal-400 dark:focus:border-teal-300 focus:ring-opacity-40 focus:outline-none focus:ring focus:ring-teal-300"
                                 type="text"
                                 placeholder="Name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                name='name'
                                 required
                             />
                         </div>
 
-                        <div className="w-full mt-4">
-                            <input
-                                className="block w-full px-4 py-2 mt-2 text-gray-700 placeholder-gray-500 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 focus:border-teal-400 dark:focus:border-teal-300 focus:ring-opacity-40 focus:outline-none focus:ring focus:ring-teal-300"
-                                type="password"
-                                placeholder="5-digit PIN"
-                                value={pin}
-                                onChange={(e) => setPin(e.target.value)}
-                                required
-                                pattern="\d{5}"
-                            />
-                        </div>
+
 
                         <div className="w-full mt-4">
                             <input
                                 className="block w-full px-4 py-2 mt-2 text-gray-700 placeholder-gray-500 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 focus:border-teal-400 dark:focus:border-teal-300 focus:ring-opacity-40 focus:outline-none focus:ring focus:ring-teal-300"
                                 type="text"
                                 placeholder="Mobile Number"
-                                value={mobileNumber}
-                                onChange={(e) => setMobileNumber(e.target.value)}
+                                name='number'
                                 required
                             />
                         </div>
@@ -80,10 +96,23 @@ const Registration = () => {
                                 className="block w-full px-4 py-2 mt-2 text-gray-700 placeholder-gray-500 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 focus:border-teal-400 dark:focus:border-teal-300 focus:ring-opacity-40 focus:outline-none focus:ring focus:ring-teal-300"
                                 type="email"
                                 placeholder="Email Address"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                name='email'
                                 required
                             />
+                        </div>
+                        <div className="w-full mt-4">
+                            <input
+                                className="block w-full px-4 py-2 mt-2 text-gray-700 placeholder-gray-500 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 focus:border-teal-400 dark:focus:border-teal-300 focus:ring-opacity-40 focus:outline-none focus:ring focus:ring-teal-300"
+                                type="password"
+                                placeholder="5-digit PIN"
+                                name="pin"
+                                pattern="\d{5}"
+                                minLength="5"
+                                maxLength="5"
+                                required
+
+                            />
+                            {pinError && <p className="text-red-500 text-xs mt-1">{pinError}</p>}
                         </div>
 
                         <div className="flex items-center justify-end mt-4">
